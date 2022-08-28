@@ -5,9 +5,6 @@
 echoerrcolor() {
 	if [[ $colors -eq 1 ]]; then
 		case $1 in
-		none)
-			str="\e[0;37m"
-			;;
 		green)
 			str="\e[0;32m"
 			;;
@@ -32,7 +29,9 @@ echoerrcolor() {
 		darkmagenta)
 			str="\e[1;35m"
 			;;
-
+		*)
+			str="\e[0;37m"
+			;;
 		esac
 		echo -ne "$str" >&2
 	fi
@@ -241,7 +240,7 @@ while true; do
 	fi
 done
 
-appendshell mkprefix $prefix
+appendshell mkprefix "${prefix}"
 appendshell gitinit
 
 while true; do
@@ -362,7 +361,10 @@ for item in ${linksection[*]}; do
 		new_entry=$new_entry$newline$hspace$hspace'create: '$entryisdir
 	fi
 
+	# TODO Accelerate; we should only have to do this 1 time per basedir, such as $HOME
 	appendshell ensureparentdirs "$itempath"
+	# TODO Update Test mode behavior so that `appendshell` \
+	# writes the file, but doesn't yet change any files or dirs
 	appendshell mv "$item" "$itempath"
 	dotlink="$dotlink$new_entry"
 done
@@ -508,9 +510,13 @@ else
 fi
 
 echoerrcolor darkred
+# TODO Make this "final pre-flight check" message more dynamic;
+# applicable to test/preview mode, dump-config
+# Should be able to just expand usage of ${warningmessage}
 read -r -p "${warningmessage}This is your last chance to press ^C before actions are taken that should not be interrupted. "
 echoerrnocolor
 
 if [[ $testmode -eq 0 ]]; then
+	# TODO: write the dotbot YAML file, but don't invoke / eval it
 	eval "${setupshell}"
 fi
