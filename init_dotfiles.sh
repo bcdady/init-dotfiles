@@ -327,7 +327,6 @@ for item in ${paths[*]}; do
 done
 
 dotlink='- link:'
-newline='\n'
 hspace='\x20\x20\x20\x20'
 
 # shellcheck disable=SC2048
@@ -378,7 +377,10 @@ $dotlink
 $dotshell"
 export installconfyaml
 
-appendshell echoconfig "$installconfyaml" 'install.conf.yaml'
+# Write the dotbot config file
+# TODO: The name of this output file should be configurable
+echoerr green 'Writing dotbot config to install.conf.yaml' 
+printf '%s' "${installconfyaml}" > 'install.conf.yaml'
 
 getgitinfo=0
 gitinfoglobal=0

@@ -331,7 +331,6 @@ for item in ~/.[^.]*; do
 done
 
 dotlink='- link:'
-newline=$'\n'
 hspace='\x20\x20\x20\x20'
 
 # shellcheck disable=SC2048
