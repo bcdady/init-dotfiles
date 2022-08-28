@@ -3,7 +3,7 @@
 # Colors as per: http://www.tldp.org/LDP/abs/html/colorizing.html
 
 echoerrcolor() {
-	if (($colors)); then
+	if [[ $colors -eq 1 ]]; then
 		case $1 in
 		none)
 			str="\e[0;37m"
@@ -34,33 +34,31 @@ echoerrcolor() {
 			;;
 
 		esac
-		echo -ne $str >&2
+		echo -ne "$str" >&2
 	fi
 }
 
 echoerrnocolor() {
-	if (($colors)); then
+	if [[ $colors -eq 1 ]]; then
 		echo -ne "\e[0m" >&2
 	fi
 }
 
 echoerr() {
-	if [ $# -gt 1 ]; then
+	if [[ $# -gt 1 ]]; then
 		color=$1
 		shift
-		echoerrcolor $color
+		echoerrcolor "$color"
 	fi
 	echo "$@" >&2
-	if [ $color ]; then
+	if [[ $color ]]; then
 		echoerrnocolor
 	fi
 }
 
-printferr() { printf "$@" >&2; }
+printferr() { printf "%s" "$@" >&2; }
 
-$(which git >&/dev/null)
-
-if [ $? -eq 1 ]; then
+if [[ -z $(which git) ]]; then
 	echoerr red "Git not found! Confirm it is indeed installed and reachable."
 	exit
 fi
@@ -127,7 +125,7 @@ dumpconf=0
 preview=1
 colors=0
 
-while [ $# -ne 0 ]; do
+while [[ $# -ne 0 ]]; do
 	case "$1" in
 	test)
 		testmode=1
@@ -176,6 +174,7 @@ while [ $# -ne 0 ]; do
 	shift
 done
 
+# shellcheck disable=SC2088
 paths=('~/.profile'
 	'~/.bash_profile'
 	'~/.bashrc'
@@ -222,18 +221,18 @@ echoerr
 
 appendshell start
 
+# shellcheck disable=SC2088
 prefix="~/.dotfiles"
-prefixfull="${prefix/\~/${HOME}}"
 
-if ! [ -d $prefixfull ]; then
+if ! [[ -d "${prefix/\~/${HOME}}" ]]; then
 	echoerr darkcyan "${prefix} is not in use."
 else
 	echoerr darkcyan "${prefix} exists and may have another purpose than ours."
 fi
 
 while true; do
-	read -p "Where do you want your dotfiles repository to be? ($prefix) " answer
-	if [ -z "$answer" ]; then
+	read -r -p "Where do you want your dotfiles repository to be? ($prefix) " answer
+	if [[ -z "$answer" ]]; then
 		break
 	else
 		echoerr red "FEATURE NOT YET SUPPORTED."
@@ -246,8 +245,8 @@ appendshell mkprefix $prefix
 appendshell gitinit
 
 while true; do
-	read -p "Shall we add Dotbot as a submodule (a good idea)? (Y/n) " answer
-	if [ -z "$answer" ]; then
+	read -r -p "Shall we add Dotbot as a submodule (a good idea)? (Y/n) " answer
+	if [[ -z "$answer" ]]; then
 		answer='y'
 	fi
 	case "$answer" in
@@ -270,8 +269,8 @@ while true; do
 done
 
 while true; do
-	read -p "Do you want Dotbot to clean ~/ of broken links added by Dotbot? (recommended) (Y/n) " answer
-	if [ -z "$answer" ]; then
+	read -r -p "Do you want Dotbot to clean ~/ of broken links added by Dotbot? (recommended) (Y/n) " answer
+	if [[ -z "$answer" ]]; then
 		answer='y'
 	fi
 	case "$answer" in
@@ -293,15 +292,16 @@ done
 declare -a linksection
 declare -i i
 
+# shellcheck disable=SC2048
 for item in ${paths[*]}; do
 	fullname="${item/\~/$HOME}"
-	if [ -h $fullname ]; then
+	if [[ -L "${fullname}" ]]; then
 		continue
 	fi
-	if [ -f $fullname ] || [ -d $fullname ]; then
+	if [[ -f "${fullname}" ]] || [[ -d "${fullname}" ]]; then
 		while true; do
-			read -p "I found ${item}, do you want to Dotbot it? (Y/n) " answer
-			if [ -z "$answer" ]; then
+			read -r -p "I found ${item}, do you want to Dotbot it? (Y/n) " answer
+			if [[ -z "$answer" ]]; then
 				answer='y'
 			fi
 			case "$answer" in
@@ -327,11 +327,12 @@ dotlink='- link:'
 newline='\n'
 hspace='\x20\x20\x20\x20'
 
+# shellcheck disable=SC2048
 for item in ${linksection[*]}; do
 	fullname="${item/\~/$HOME}"
 	firstdot=$(echo "$item" | sed -n "s/[.].*//p" | wc -c)
 	firstslash=$(echo "$item" | sed -n "s/[/].*//p" | wc -c)
-	if [ -d $fullname ]; then
+	if [[ -d "${fullname}" ]]; then
 		itempath=$item'/'
 	else
 		itempath=$item
@@ -347,7 +348,7 @@ for item in ${linksection[*]}; do
 	else
 		entryisdir='false'
 	fi
-	if (($verboseconf)); then
+	if [[ $verboseconf -eq 1 ]]; then
 		new_entry=$newline$hspace$item':'
 		new_entry=$new_entry$newline$hspace$hspace'path: '$itempath
 		new_entry=$new_entry$newline$hspace$hspace'create: '$entryisdir
@@ -361,8 +362,8 @@ for item in ${linksection[*]}; do
 		new_entry=$new_entry$newline$hspace$hspace'create: '$entryisdir
 	fi
 
-	appendshell ensureparentdirs $itempath
-	appendshell mv $item $itempath
+	appendshell ensureparentdirs "$itempath"
+	appendshell mv "$item" "$itempath"
 	dotlink="$dotlink$new_entry"
 done
 
@@ -372,15 +373,14 @@ appendshell echoconfig "$installconfyaml" 'install.conf.yaml'
 
 getgitinfo=0
 gitinfoglobal=0
-if (($installerrun)); then
-	$(git config user.name >&/dev/null && git config user.email >&/dev/null)
+if [[ $installerrun -eq 1 ]]; then
 
-	if [ $? -ne 0 ]; then
+	if [[ -z $(git config user.name) || -z $(git config user.email) ]]; then
 		echoerr darkred "Please note you do not have a name or email set for git."
-		echoerr darkred "I shall not be able to commit unless you set the missing variables."
-		while [ 1 ]; do
-			read -p "Do you want to set them? (Y/n) " answer
-			if [ -z "$answer" ]; then
+		echoerr darkred "You will not be able to commit any updates until you configure git."
+		while true;  do
+			read -r -p "Do you want to set them? (Y/n) " answer
+			if [[ -z "$answer" ]]; then
 				answer='y'
 			fi
 			case "$answer" in
@@ -389,7 +389,7 @@ if (($installerrun)); then
 				break
 				;;
 			N* | n*)
-				echoerr darkgreen "Okay, I shall not."
+				echoerr darkgreen "Okay: will not."
 				getgitinfo=0
 				installerrun=0
 				break
@@ -399,9 +399,9 @@ if (($installerrun)); then
 				;;
 			esac
 		done
-		while [ 1 ]; do
-			read -p "Do you want these settings to be global? (Y/n) " answer
-			if [ -z "$answer" ]; then
+		while true; do
+			read -r -p "Do you want these settings to be global? (Y/n) " answer
+			if [[ -z "$answer" ]]; then
 				answer='y'
 			fi
 			case "$answer" in
@@ -422,26 +422,24 @@ if (($installerrun)); then
 		done
 	fi
 fi
-if (($getgitinfo)); then
-	$(git config user.name >&/dev/null)
-	if [ $? -ne 0 ]; then
+if [[ $getgitinfo -eq 1 ]]; then
+	if [[ -z $(git config user.name) ]]; then
 		gitname="Donald Knuth"
 	else
 		gitname="$(git config user.name)"
 	fi
-	$(git config user.email >&/dev/null)
-	if [ $? -ne 0 ]; then
+	if [[ -z $(git config user.email) ]]; then
 		gitemail="Don.Knuth@example.com"
 	else
 		gitemail="$(git config user.email)"
 	fi
-	read -p "What do you want for your git name? [${gitname}]" answer
-	if [ -z "$answer" ]; then
+	read -r -p "What do you want for your git name? [${gitname}]" answer
+	if [[ -z "$answer" ]]; then
 		answer="$gitname"
 	fi
 	gitname="$answer"
-	read -p "What do you want for your git email? [${gitemail}]" answer
-	if [ -z "$answer" ]; then
+	read -r -p "What do you want for your git email? [${gitemail}]" answer
+	if [[ -z "$answer" ]]; then
 		answer="$gitemail"
 	fi
 	gitemail="$answer"
@@ -449,9 +447,9 @@ if (($getgitinfo)); then
 	appendshell gitsetemail "$gitemail" $gitinfoglobal
 fi
 
-while (($installerrun)); do
-	read -p "Shall I run the installer? (Necessary to git commit) (Y/n) " answer
-	if [ -z "$answer" ]; then
+while [[ $installerrun -eq 1 ]]; do
+	read -r -p "Shall I run the installer? (Necessary to git commit) (Y/n) " answer
+	if [[ -z "$answer" ]]; then
 		answer='y'
 	fi
 	case "$answer" in
@@ -471,9 +469,9 @@ while (($installerrun)); do
 	esac
 done
 
-while (($installerrun)); do
-	read -p "Shall I make the initial commit? (Y/n) " answer
-	if [ -z "$answer" ]; then
+while [[ $installerrun -eq 1 ]]; do
+	read -r -p "Shall I make the initial commit? (Y/n) " answer
+	if [[ -z "$answer" ]]; then
 		answer='y'
 	fi
 	case "$answer" in
@@ -493,26 +491,26 @@ while (($installerrun)); do
 done
 
 echoerr
-if (($dumpconf)); then
+if [[ $dumpconf -eq 1 ]]; then
 	echo -e "$dotlink"
 	echoerr
 fi
 echoerr magenta "The below are the actions that will be taken to setup Dotbot."
-if (($testmode)); then
+if [[ $testmode -eq 1 ]]; then
 	echoerr darkmagenta "Just kidding. They won't be."
 fi
 
-if (($preview)); then
+if [[ $preview -eq 1 ]]; then
 	printferr "\n${setupshell//; /;\\n}\n\n" # place newline after each command for printing
-	warningmessage='If you do not see a problem with the above commands, press enter. '
+	warningmessage='If you do not see a problem with the above commands, press enter.'
 else
 	warningmessage=''
 fi
 
 echoerrcolor darkred
-read -p "${warningmessage}This is your last chance to press ^C before actions are taken that should not be interrupted. "
+read -r -p "${warningmessage}This is your last chance to press ^C before actions are taken that should not be interrupted. "
 echoerrnocolor
 
-if ! (($testmode)); then
-	eval $setupshell
+if [[ $testmode -eq 0 ]]; then
+	eval "${setupshell}"
 fi
