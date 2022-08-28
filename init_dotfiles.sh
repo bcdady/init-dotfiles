@@ -58,7 +58,7 @@ echoerr() {
 printout() { printf "%s\n" "$@" >&2; }
 
 # https://www.shellcheck.net/wiki/SC2091
-if ! which git; then
+if ! which git >&2; then
 	# shellcheck disable=SC2016
 	echoerr red 'git command Not found (in PATH)! Confirm it is indeed installed and in $PATH.'
 	exit
@@ -90,9 +90,6 @@ appendshell() {
 	mv)
 		add="mv $2 $3;"
 		;;
-	echoconfig)
-		add='echo -e "'$2'" >> '$3';'
-		;;
 	runinstaller)
 		add='./install;'
 		;;
@@ -122,11 +119,18 @@ appendshell() {
 ${add}"
 }
 
+# Declare variables and set defaults
+# TODO: make colors-enabled the default mode, once its working properly
+colors=0
+dotclean=''
+dotlink=''
+dotshell=''
+dumpconf=0
+installerrun=1
+preview=1
+setupshell=''
 testmode=0
 verboseconf=0
-dumpconf=0
-preview=1
-colors=0
 
 while [[ $# -ne 0 ]]; do
 	case "$1" in
@@ -209,12 +213,6 @@ paths=('~/.profile'
 	'~/.config/obmenu-generator'
 	'~/.config/dmenu'
 	'~/.config/tint2')
-
-setupshell=''
-dotclean=''
-dotlink=''
-dotshell=''
-installerrun=1
 
 echoerr blue "Welcome to the configuration generator for Dotbot"
 echoerr blue "Please be aware that if you have a complicated setup, you may need more customization than this script offers."
@@ -327,7 +325,10 @@ for item in ${paths[*]}; do
 done
 
 dotlink='- link:'
-hspace='\x20\x20\x20\x20'
+# Use ANSI-C Quoting to render whitespace
+# https://www.gnu.org/software/bash/manual/html_node/ANSI_002dC-Quoting.html
+newline=$'\n'
+hspace=$'\x20\x20\x20\x20'
 
 # shellcheck disable=SC2048
 for item in ${linksection[*]}; do
@@ -366,8 +367,6 @@ for item in ${linksection[*]}; do
 
 	# TODO Accelerate; we should only have to do this 1 time per basedir, such as $HOME
 	appendshell ensureparentdirs "$itempath"
-	# TODO Update Test mode behavior so that `appendshell` \
-	# writes the file, but doesn't yet change any files or dirs
 	appendshell mv "$item" "$itempath"
 	dotlink="$dotlink$new_entry"
 done
@@ -377,7 +376,10 @@ $dotlink
 $dotshell"
 export installconfyaml
 
-# Write the dotbot config file
+# Write the dotbot config file -- this should stand out in the terminal UI \
+# especially if there are many dotfiles or dotdirs that have just been \
+# prompted and clicked through.
+
 # TODO: The name of this output file should be configurable
 echoerr green 'Writing dotbot config to install.conf.yaml' 
 printf '%s' "${installconfyaml}" > 'install.conf.yaml'
@@ -512,6 +514,8 @@ if [[ $testmode -eq 1 ]]; then
 fi
 
 if [[ $preview -eq 1 ]]; then
+	# TODO: Write setupshell to a file and print/cat the file
+	# Call "setupshell" comething like ./migrate-dotfiles.sh
 	printout "${setupshell}"
 	warningmessage='If you do not see a problem with the above commands, press enter.'
 else
@@ -522,10 +526,9 @@ echoerrcolor darkred
 # TODO Make this "final pre-flight check" message more dynamic;
 # applicable to test/preview mode, dump-config
 # Should be able to just expand usage of ${warningmessage}
-read -r -p "${warningmessage}This is your last chance to press ^C before actions are taken that should not be interrupted. "
+read -r -p "${warningmessage}This is your last chance to press ^C before actions are taken that should not be interrupted."
 echoerrnocolor
 
 if [[ $testmode -eq 0 ]]; then
-	# TODO: write the dotbot YAML file, but don't invoke / eval it
 	eval "${setupshell}"
 fi
