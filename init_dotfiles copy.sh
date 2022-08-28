@@ -296,12 +296,16 @@ declare -a linksection
 declare -i i
 
 # shellcheck disable=SC2048
-for item in ${paths[*]}; do
-	fullname="${item/\~/$HOME}"
-	if [[ -L "${fullname}" ]]; then
+for item in ~/.[^.]*; do
+	printf 'paths[item] is %s\n' "$item"
+	# fullname="${item/\~/$HOME}"
+	if [[ -L "${item}" ]]; then
+		printf "  > %s is a symlink\n" "${item}"
 		continue
-	fi
-	if [[ -f "${fullname}" ]] || [[ -d "${fullname}" ]]; then
+	else
+	# fi
+	# if [[ -f "${fullname}" ]] || [[ -d "${fullname}" ]]; then
+		printf "  > %s is Not a symlink\n" "${item}"
 		while true; do
 			read -r -p "I found ${item}, do you want to Dotbot it? (Y/n) " answer
 			if [[ -z "$answer" ]]; then
@@ -327,7 +331,7 @@ for item in ${paths[*]}; do
 done
 
 dotlink='- link:'
-newline='\n'
+newline=$'\n'
 hspace='\x20\x20\x20\x20'
 
 # shellcheck disable=SC2048
@@ -378,7 +382,10 @@ $dotlink
 $dotshell"
 export installconfyaml
 
-appendshell echoconfig "$installconfyaml" 'install.conf.yaml'
+# Write the dotbot config file
+# TODO: The name of this output file should be configurable
+echoerr green 'Writing dotbot config to install.conf.yaml' 
+printf '%s' "${installconfyaml}" > 'install.conf.yaml'
 
 getgitinfo=0
 gitinfoglobal=0
@@ -520,8 +527,13 @@ echoerrcolor darkred
 # TODO Make this "final pre-flight check" message more dynamic;
 # applicable to test/preview mode, dump-config
 # Should be able to just expand usage of ${warningmessage}
-read -r -p "${warningmessage}This is your last chance to press ^C before actions are taken that should not be interrupted. "
+read -r -p "${warningmessage}This is your last chance to press ^C before actions are taken that should not be interrupted."
 echoerrnocolor
+
+echo "testmode is $testmode"
+echo ''
+echo "setupshell is ${setupshell}"
+echo ''
 
 if [[ $testmode -eq 0 ]]; then
 	# TODO: write the dotbot YAML file, but don't invoke / eval it
