@@ -58,7 +58,8 @@ echoerr() {
 printout() { printf "%s\n" "$@" >&2; }
 
 if [[ -z $(which git) ]]; then
-	echoerr red "Git not found! Confirm it is indeed installed and reachable."
+	# shellcheck disable=SC2016
+	echoerr red 'git command Not found (in PATH)! Confirm it is indeed installed and in $PATH.'
 	exit
 fi
 
@@ -257,12 +258,12 @@ while true; do
 		break
 		;;
 	N* | n*)
-		echoerr darkgreen "Okay, I shall not. You will need to manually set up your install script."
+		echoerr darkgreen "Okay: will not. You will need to manually set up your install script."
 		installerrun=0
 		break
 		;;
 	*)
-		echoerr red "Answer not understood: ${answer}"
+		echoerr red "Error: Unrecognized answer: ${answer}"
 		;;
 	esac
 done
@@ -283,7 +284,7 @@ while true; do
 		break
 		;;
 	*)
-		echoerr red "Answer not understood: ${answer}"
+		echoerr red "Error: Unrecognized answer: ${answer}"
 		;;
 	esac
 done
@@ -315,7 +316,7 @@ for item in ${paths[*]}; do
 				break
 				;;
 			*)
-				echoerr red "Answer not understood: ${answer}"
+				echoerr red "Error: Unrecognized answer: ${answer}"
 				;;
 			esac
 		done
@@ -397,7 +398,7 @@ if [[ $installerrun -eq 1 ]]; then
 				break
 				;;
 			*)
-				echoerr red "Answer not understood: ${answer}"
+				echoerr red "Error: Unrecognized answer: ${answer}"
 				;;
 			esac
 		done
@@ -413,12 +414,12 @@ if [[ $installerrun -eq 1 ]]; then
 				break
 				;;
 			N* | n*)
-				echoerr green "Okay, I shall make them local."
+				echoerr green "Okay: will make them local."
 				gitinfoglobal=0
 				break
 				;;
 			*)
-				echoerr red "Answer not understood: ${answer}"
+				echoerr red "Error: Unrecognized answer: ${answer}"
 				;;
 			esac
 		done
@@ -450,7 +451,7 @@ if [[ $getgitinfo -eq 1 ]]; then
 fi
 
 while [[ $installerrun -eq 1 ]]; do
-	read -r -p "Shall I run the installer? (Necessary to git commit) (Y/n) " answer
+	read -r -p "Run the installer? (Necessary to git commit) (Y/n) " answer
 	if [[ -z "$answer" ]]; then
 		answer='y'
 	fi
@@ -461,18 +462,18 @@ while [[ $installerrun -eq 1 ]]; do
 		break
 		;;
 	N* | n*)
-		echoerr darkgreen "Okay, I shall not. You will need to take care of that yourself."
+		echoerr darkgreen "Okay: will not. You will need to take care of that yourself."
 		installerrun=0
 		break
 		;;
 	*)
-		echoerr red "Answer not understood: ${answer}"
+		echoerr red "Error: Unrecognized answer: ${answer}"
 		;;
 	esac
 done
 
 while [[ $installerrun -eq 1 ]]; do
-	read -r -p "Shall I make the initial commit? (Y/n) " answer
+	read -r -p "Make the initial commit? (Y/n) " answer
 	if [[ -z "$answer" ]]; then
 		answer='y'
 	fi
@@ -483,11 +484,11 @@ while [[ $installerrun -eq 1 ]]; do
 		break
 		;;
 	N* | n*)
-		echoerr darkgreen "Okay, I shall not. You will need to take care of that yourself."
+		echoerr darkgreen "Okay: will not. You will need to take care of that yourself."
 		break
 		;;
 	*)
-		echoerr red "Answer not understood: ${answer}"
+		echoerr red "Error: Unrecognized answer: ${answer}"
 		;;
 	esac
 done
