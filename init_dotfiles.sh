@@ -56,7 +56,7 @@ echoerr() {
 	fi
 }
 
-printferr() { printf "%s" "$@" >&2; }
+printout() { printf "%s\n" "$@" >&2; }
 
 if [[ -z $(which git) ]]; then
 	echoerr red "Git not found! Confirm it is indeed installed and reachable."
@@ -501,7 +501,7 @@ if [[ $testmode -eq 1 ]]; then
 fi
 
 if [[ $preview -eq 1 ]]; then
-	printferr "\n${setupshell//; /;\\n}\n\n" # place newline after each command for printing
+	printout "${setupshell}"
 	warningmessage='If you do not see a problem with the above commands, press enter.'
 else
 	warningmessage=''
