@@ -59,7 +59,7 @@ printline() {
 printout() { printf "%s\n" "$@" >&2; }
 
 # https://www.shellcheck.net/wiki/SC2091
-if ! which git >&2; then
+if [[ ! $(which git) ]]; then
 	# shellcheck disable=SC2016
 	printline red 'git command Not found (in PATH)! Confirm it is indeed installed and in $PATH.'
 	exit
@@ -137,6 +137,7 @@ while [[ $# -ne 0 ]]; do
 	case "$1" in
 	test)
 		testmode=1
+		installerrun=0
 		printline darkcyan "Test mode enabled."
 		;;
 	no-test)
@@ -260,7 +261,7 @@ while true; do
 		break
 		;;
 	N* | n*)
-		printline darkgreen "Okay: will not. You will need to manually set up your install script."
+		printline darkgreen "OK: will not. You will need to manually set up your install script."
 		installerrun=0
 		break
 		;;
@@ -271,18 +272,18 @@ while true; do
 done
 
 while true; do
-	read -r -p "Do you want Dotbot to clean ~/ of broken links added by Dotbot? (recommended) (Y/n) " answer
+	read -r -p "Should Dotbot clean \$HOME of any broken links? (Recommended) (Y/n) " answer
 	if [[ -z "$answer" ]]; then
 		answer='y'
 	fi
 	case "$answer" in
 	Y* | y*)
-		printline green "I will ask Dotbot to clean."
+		printline green "OK: Dotbot will clean links in \$HOME."
 		dotclean="- clean: ['~']"
 		break
 		;;
 	N* | n*)
-		printline darkgreen "Not asking Dotbot to clean."
+		printline darkgreen "Dotbot will Not clean links."
 		break
 		;;
 	*)
@@ -405,7 +406,7 @@ if [[ $installerrun -eq 1 ]]; then
 				break
 				;;
 			N* | n*)
-				printline darkgreen "Okay: will not."
+				printline darkgreen "OK: will not."
 				getgitinfo=0
 				installerrun=0
 				break
@@ -427,7 +428,7 @@ if [[ $installerrun -eq 1 ]]; then
 				break
 				;;
 			N* | n*)
-				printline green "Okay: will make them local."
+				printline green "OK: will make them local."
 				gitinfoglobal=0
 				break
 				;;
@@ -475,7 +476,7 @@ while [[ $installerrun -eq 1 ]]; do
 		break
 		;;
 	N* | n*)
-		printline darkgreen "Okay: will not. You will need to take care of that yourself."
+		printline darkgreen "OK: will not. You will need to take care of that yourself."
 		installerrun=0
 		break
 		;;
@@ -497,7 +498,7 @@ while [[ $installerrun -eq 1 ]]; do
 		break
 		;;
 	N* | n*)
-		printline darkgreen "Okay: will not. You will need to take care of that yourself."
+		printline darkgreen "OK: will not. You will need to take care of that yourself."
 		break
 		;;
 	*)
@@ -520,7 +521,7 @@ if [[ $preview -eq 1 ]]; then
 	# TODO: Write setupshell to a file and print/cat the file
 	# Call "setupshell" comething like ./migrate-dotfiles.sh
 	printout "${setupshell}"
-	warningmessage='If you do not see a problem with the above commands, press enter.'
+	warningmessage='If you are ready to make these changes to your files, press [Enter] to proceed.'
 else
 	warningmessage=''
 fi
@@ -532,7 +533,8 @@ echoerrcolor darkred
 # TODO Make this "final pre-flight check" message more dynamic;
 # applicable to test/preview mode, dump-config
 # Should be able to just expand usage of ${warningmessage}
-read -r -p "${warningmessage}This is your last chance to press ^C before actions are taken that should not be interrupted."
+read -r -p "${warningmessage}
+This is your last chance to press ^C before actions are taken that should not be interrupted."
 echoerrnocolor
 
 if [[ $testmode -eq 0 ]]; then
