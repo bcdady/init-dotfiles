@@ -43,7 +43,8 @@ echoerrnocolor() {
 	fi
 }
 
-echoerr() {
+# TODO: Consolidate all output into a single function with conditional color support
+printline() {
 	if [[ $# -gt 1 ]]; then
 		color=$1
 		shift
@@ -60,7 +61,7 @@ printout() { printf "%s\n" "$@" >&2; }
 # https://www.shellcheck.net/wiki/SC2091
 if ! which git >&2; then
 	# shellcheck disable=SC2016
-	echoerr red 'git command Not found (in PATH)! Confirm it is indeed installed and in $PATH.'
+	printline red 'git command Not found (in PATH)! Confirm it is indeed installed and in $PATH.'
 	exit
 fi
 
@@ -136,46 +137,46 @@ while [[ $# -ne 0 ]]; do
 	case "$1" in
 	test)
 		testmode=1
-		echoerr darkcyan "Test mode enabled."
+		printline darkcyan "Test mode enabled."
 		;;
 	no-test)
 		testmode=0
-		echoerr darkcyan "Test mode disabled."
+		printline darkcyan "Test mode disabled."
 		;;
 	verbose-config)
 		verboseconf=1
-		echoerr darkcyan "Verbose configuration file active."
+		printline darkcyan "Verbose configuration file active."
 		;;
 	no-verbose-config)
 		verboseconf=0
-		echoerr darkcyan "Concise configuration file active."
+		printline darkcyan "Concise configuration file active."
 		;;
 	dump-config)
 		dumpconf=1
-		echoerr darkcyan "Will dump config to stdout."
+		printline darkcyan "Will dump config to stdout."
 		;;
 	no-dump-config)
 		dumpconf=0
-		echoerr darkcyan "Will not dump config to stdout."
+		printline darkcyan "Will not dump config to stdout."
 		;;
 	preview)
 		preview=1
-		echoerr darkcyan "Will show commands to be executed."
+		printline darkcyan "Will show commands to be executed."
 		;;
 	no-preview)
 		preview=0
-		echoerr darkcyan "Will not show commands to be executed."
+		printline darkcyan "Will not show commands to be executed."
 		;;
 	colors)
 		colors=1
-		echoerr darkcyan "Will print with colors."
+		printline darkcyan "Will print with colors."
 		;;
 	no-colors)
 		colors=0
-		echoerr darkcyan "No color."
+		printline darkcyan "No color."
 		;;
 	*)
-		echoerr red "Unfamiliar configuration option"
+		printline red "Unrecognized parameter / configuration option"
 		;;
 	esac
 	shift
@@ -214,11 +215,11 @@ paths=('~/.profile'
 	'~/.config/dmenu'
 	'~/.config/tint2')
 
-echoerr blue "Welcome to the configuration generator for Dotbot"
-echoerr blue "Please be aware that if you have a complicated setup, you may need more customization than this script offers."
-echoerr
-echoerr blue "At any time, press ^C to quit. No changes will be made until you confirm."
-echoerr
+printline blue "Welcome to the configuration generator for Dotbot"
+printline blue "Please be aware that if you have a complicated setup, you may need more customization than this script offers."
+printline
+printline blue "At any time, press ^C to quit. No changes will be made until you confirm."
+printline
 
 appendshell start
 
@@ -226,9 +227,9 @@ appendshell start
 prefix="~/.dotfiles"
 
 if ! [[ -d "${prefix/\~/${HOME}}" ]]; then
-	echoerr darkcyan "${prefix} is not in use."
+	printline darkcyan "${prefix} is not in use."
 else
-	echoerr darkcyan "${prefix} exists and may have another purpose than ours."
+	printline darkcyan "${prefix} exists and may have another purpose than ours."
 fi
 
 while true; do
@@ -236,9 +237,9 @@ while true; do
 	if [[ -z "$answer" ]]; then
 		break
 	else
-		echoerr red "FEATURE NOT YET SUPPORTED."
-		echoerr red "Sorry for misleading you."
-		echoerr
+		printline red "FEATURE NOT YET SUPPORTED."
+		printline red "Sorry for misleading you."
+		printline
 	fi
 done
 
@@ -252,19 +253,19 @@ while true; do
 	fi
 	case "$answer" in
 	Y* | y*)
-		echoerr green "Will do."
+		printline green "Will do."
 		appendshell gitaddsub
 		appendshell gitignoredirty
 		appendshell gitinstallinstall
 		break
 		;;
 	N* | n*)
-		echoerr darkgreen "Okay: will not. You will need to manually set up your install script."
+		printline darkgreen "Okay: will not. You will need to manually set up your install script."
 		installerrun=0
 		break
 		;;
 	*)
-		echoerr red "Error: Unrecognized answer: ${answer}"
+		printline red "Error: Unrecognized answer: ${answer}"
 		;;
 	esac
 done
@@ -276,16 +277,16 @@ while true; do
 	fi
 	case "$answer" in
 	Y* | y*)
-		echoerr green "I will ask Dotbot to clean."
+		printline green "I will ask Dotbot to clean."
 		dotclean="- clean: ['~']"
 		break
 		;;
 	N* | n*)
-		echoerr darkgreen "Not asking Dotbot to clean."
+		printline darkgreen "Not asking Dotbot to clean."
 		break
 		;;
 	*)
-		echoerr red "Error: Unrecognized answer: ${answer}"
+		printline red "Error: Unrecognized answer: ${answer}"
 		;;
 	esac
 done
@@ -309,15 +310,15 @@ for item in ${paths[*]}; do
 			Y* | y*)
 				linksection[$i]=$item
 				i=$i+1
-				echoerr green "Dotbotted!"
+				printline green "Dotbotted!"
 				break
 				;;
 			N* | n*)
-				echoerr darkgreen "Not added to Dotbot."
+				printline darkgreen "Not Dotbotted."
 				break
 				;;
 			*)
-				echoerr red "Error: Unrecognized answer: ${answer}"
+				printline red "Error: Unrecognized answer: ${answer}"
 				;;
 			esac
 		done
@@ -381,7 +382,8 @@ export installconfyaml
 # prompted and clicked through.
 
 # TODO: The name of this output file should be configurable
-echoerr green 'Writing dotbot config to install.conf.yaml' 
+printline green 'Writing dotbot config to install.conf.yaml' 
+
 printf '%s' "${installconfyaml}" > 'install.conf.yaml'
 
 getgitinfo=0
@@ -389,8 +391,8 @@ gitinfoglobal=0
 if [[ $installerrun -eq 1 ]]; then
 
 	if [[ -z $(git config user.name) || -z $(git config user.email) ]]; then
-		echoerr darkred "Please note you do not have a name or email set for git."
-		echoerr darkred "You will not be able to commit any updates until you configure git."
+		printline darkred "Please note you do not have a name or email set for git."
+		printline darkred "You will not be able to commit any updates until you configure git."
 		while true;  do
 			read -r -p "Do you want to set them? (Y/n) " answer
 			if [[ -z "$answer" ]]; then
@@ -402,13 +404,13 @@ if [[ $installerrun -eq 1 ]]; then
 				break
 				;;
 			N* | n*)
-				echoerr darkgreen "Okay: will not."
+				printline darkgreen "Okay: will not."
 				getgitinfo=0
 				installerrun=0
 				break
 				;;
 			*)
-				echoerr red "Error: Unrecognized answer: ${answer}"
+				printline red "Error: Unrecognized answer: ${answer}"
 				;;
 			esac
 		done
@@ -419,17 +421,17 @@ if [[ $installerrun -eq 1 ]]; then
 			fi
 			case "$answer" in
 			Y* | y*)
-				echoerr green "Adding --global to the set commands."
+				printline green "Adding --global to the set commands."
 				gitinfoglobal=1
 				break
 				;;
 			N* | n*)
-				echoerr green "Okay: will make them local."
+				printline green "Okay: will make them local."
 				gitinfoglobal=0
 				break
 				;;
 			*)
-				echoerr red "Error: Unrecognized answer: ${answer}"
+				printline red "Error: Unrecognized answer: ${answer}"
 				;;
 			esac
 		done
@@ -467,17 +469,17 @@ while [[ $installerrun -eq 1 ]]; do
 	fi
 	case "$answer" in
 	Y* | y*)
-		echoerr green "Will do."
+		printline green "Will do."
 		appendshell runinstaller
 		break
 		;;
 	N* | n*)
-		echoerr darkgreen "Okay: will not. You will need to take care of that yourself."
+		printline darkgreen "Okay: will not. You will need to take care of that yourself."
 		installerrun=0
 		break
 		;;
 	*)
-		echoerr red "Error: Unrecognized answer: ${answer}"
+		printline red "Error: Unrecognized answer: ${answer}"
 		;;
 	esac
 done
@@ -489,28 +491,28 @@ while [[ $installerrun -eq 1 ]]; do
 	fi
 	case "$answer" in
 	Y* | y*)
-		echoerr green "Will do."
+		printline green "Will do."
 		appendshell gitinitialcommit
 		break
 		;;
 	N* | n*)
-		echoerr darkgreen "Okay: will not. You will need to take care of that yourself."
+		printline darkgreen "Okay: will not. You will need to take care of that yourself."
 		break
 		;;
 	*)
-		echoerr red "Error: Unrecognized answer: ${answer}"
+		printline red "Error: Unrecognized answer: ${answer}"
 		;;
 	esac
 done
 
-echoerr
+printline
 if [[ $dumpconf -eq 1 ]]; then
 	echo -e "$dotlink"
-	echoerr
+	printline
 fi
 echoerr magenta "The below are the actions that will be taken to setup Dotbot."
 if [[ $testmode -eq 1 ]]; then
-	echoerr darkmagenta "Just kidding. They won't be."
+	printline darkmagenta "Just kidding. They won't be."
 fi
 
 if [[ $preview -eq 1 ]]; then
@@ -521,6 +523,9 @@ if [[ $preview -eq 1 ]]; then
 else
 	warningmessage=''
 fi
+
+# TODO Update Test mode behavior so that `appendshell` \
+# writes the dotbot config file, but doesn't yet change any files or dirs
 
 echoerrcolor darkred
 # TODO Make this "final pre-flight check" message more dynamic;
