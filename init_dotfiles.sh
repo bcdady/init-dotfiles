@@ -353,17 +353,17 @@ for item in ${linksection[*]}; do
 		entryisdir='false'
 	fi
 	if [[ $verboseconf -eq 1 ]]; then
-		new_entry=$newline$hspace$item':'
-		new_entry=$new_entry$newline$hspace$hspace'path: '$itempath
-		new_entry=$new_entry$newline$hspace$hspace'create: '$entryisdir
-		new_entry=$new_entry$newline$hspace$hspace'relink: false'
-		new_entry=$new_entry$newline$hspace$hspace'force: false'
+		new_entry="${newline}${hspace}${item/$HOME/\$HOME}:"
+		new_entry="$new_entry${newline}${hspace}${hspace}path: $itempath"
+		new_entry="$new_entry${newline}${hspace}${hspace}create: $entryisdir"
+		new_entry="$new_entry${newline}${hspace}${hspace}relink: false"
+		new_entry="$new_entry${newline}${hspace}${hspace}force: false"
 	elif [[ $entryisdir = 'false' ]]; then
-		new_entry=$newline$hspace$item': '$itempath
+		new_entry="${newline}${hspace}${item/$HOME/\$HOME}: $itempath"
 	else
-		new_entry=$newline$hspace$item':'
-		new_entry=$new_entry$newline$hspace$hspace'path: '$itempath
-		new_entry=$new_entry$newline$hspace$hspace'create: '$entryisdir
+		new_entry="${newline}${hspace}${item/$HOME/\$HOME}:"
+		new_entry="$new_entry${newline}${hspace}${hspace}path: $itempath"
+		new_entry="$new_entry${newline}${hspace}${hspace}create: $entryisdir"
 	fi
 
 	# TODO Accelerate; we should only have to do this 1 time per basedir, such as $HOME
@@ -380,10 +380,11 @@ export installconfyaml
 # Write the dotbot config file -- this should stand out in the terminal UI \
 # especially if there are many dotfiles or dotdirs that have just been \
 # prompted and clicked through.
-
+printline
+printline yellow '! Congratulations! That is the end of the Dotbot survey'
 # TODO: The name of this output file should be configurable
 printline green 'Writing dotbot config to install.conf.yaml' 
-
+printline
 printf '%s' "${installconfyaml}" > 'install.conf.yaml'
 
 getgitinfo=0
@@ -458,8 +459,8 @@ if [[ $getgitinfo -eq 1 ]]; then
 		answer="$gitemail"
 	fi
 	gitemail="$answer"
-	appendshell gitsetname "$gitname" $gitinfoglobal
-	appendshell gitsetemail "$gitemail" $gitinfoglobal
+	appendshell gitsetname "${gitname}" "${gitinfoglobal}"
+	appendshell gitsetemail "${gitemail}" "${gitinfoglobal}"
 fi
 
 while [[ $installerrun -eq 1 ]]; do
