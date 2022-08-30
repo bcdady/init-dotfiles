@@ -284,7 +284,7 @@ appendshell mktarget "${target}"
 appendshell gitinit
 
 while true; do
-	read -r -p "(Recommended) Add the Dotbot repo as a submodule? (Y/n)" answer
+	read -r -p '(Recommended) Add the Dotbot repo as a submodule? (Y/n)' answer
 	if [[ -z "${answer}" ]]; then
 		answer='y'
 	fi
@@ -339,7 +339,7 @@ for item in ${paths[*]}; do
 	fi
 	if [[ -f "${fullname}" ]] || [[ -d "${fullname}" ]]; then
 		while true; do
-			read -r -p "${item}: [Enter] to confirm management should be migrated to Dotbot, or type 'n' first to bypass it. (Y/n)" answer
+			read -r -p "${item}: [Enter] to migrate to Dotbot or [n] to bypass. (Y/n)" answer
 			if [[ -z "${answer}" ]]; then
 				answer='y'
 			fi
