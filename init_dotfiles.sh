@@ -307,26 +307,28 @@ while true; do
 	esac
 done
 
-while true; do
-	read -r -p '(Recommended) Clean $HOME of any broken links? (Y/n)' answer
-	if [[ -z "$answer" ]]; then
-		answer='y'
-	fi
-	case "$answer" in
-	Y* | y*)
-		printline green "OK: Dotbot will clean links in \$HOME."
+# while true; do
+# 	read	read -r -p '(Recommended) Clean $HOME of any broken links? (Y/n)' answer
+# 	if [[ -z "${answer}" ]]; then
+# 		answer='y'
+# 	fi
+# 	case "${answer}" in
+# 	Y* | y*)
+# 		printline green "${hspace}OK: Dotbot will clean links in \$HOME."
+		# The rest has been commented to make cleaning $HOME of broken \
+		# symlinks a default / mandatory.
 		dotclean="- clean: ['~']"
-		break
-		;;
-	N* | n*)
-		printline darkgreen "Dotbot will Not clean links."
-		break
-		;;
-	*)
-		printline red "Error: Unrecognized answer: ${answer}"
-		;;
-	esac
-done
+# 		break
+# 		;;
+# 	N* | n*)
+# 		printline darkgreen "${hspace}OK: Dotbot will Not clean links."
+# 		break
+# 		;;
+# 	*)
+# 		printline red "${hspace}Error: Unrecognized answer: ${answer}"
+# 		;;
+# 	esac
+# done
 
 declare -a linksection
 declare -i i
