@@ -1,4 +1,16 @@
 #!/usr/bin/env bash
+# *********************************************************************
+# *
+# * This program is free software; you can redistribute it and/or
+# * modify it. It is distributed in the hope that it will be useful,
+# * but WITHOUT ANY WARRANTY; without even the implied warranty of
+# * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+# *
+# *********************************************************************
+
+# ******************************
+# * Setup -- Functions section *
+# ******************************
 
 # Colors as per: http://www.tldp.org/LDP/abs/html/colorizing.html
 
@@ -6,40 +18,40 @@ echoerrcolor() {
 	if [[ $colors -eq 1 ]]; then
 		case $1 in
 		green)
-			str="\e[0;32m"
+			str='\e[0;32m'
 			;;
 		red)
-			str="\e[0;31m"
+			str='\e[0;31m'
 			;;
 		blue)
-			str="\e[1;34m"
+			str='\e[1;34m'
 			;;
 		darkcyan)
-			str="\e[0;36m"
+			str='\e[0;36m'
 			;;
 		darkgreen)
-			str="\e[1;32m"
+			str='\e[1;32m'
 			;;
 		darkred)
-			str="\e[1;31m"
+			str='\e[1;31m'
 			;;
 		magenta)
-			str="\e[0;35m"
+			str='\e[0;35m'
 			;;
 		darkmagenta)
-			str="\e[1;35m"
+			str='\e[1;35m'
 			;;
 		*)
-			str="\e[0;37m"
+			str='\e[0;37m'
 			;;
 		esac
-		echo -ne "$str" >&2
+		echo -ne "${str}" >&2
 	fi
 }
 
 echoerrnocolor() {
-	if [[ $colors -eq 1 ]]; then
-		echo -ne "\e[0m" >&2
+	if [[ ${colors} -eq 1 ]]; then
+		echo -ne '\e[0m' >&2
 	fi
 }
 
@@ -48,7 +60,7 @@ printline() {
 	if [[ $# -gt 1 ]]; then
 		color=$1
 		shift
-		echoerrcolor "$color"
+		echoerrcolor "${color}"
 	fi
 	echo "$@" >&2
 	if [[ $color ]]; then
@@ -66,12 +78,12 @@ if [[ ! $(which git) ]]; then
 fi
 
 appendshell() {
-	case "$1" in
+	case "${1}" in
 	start)
 		add='echo "Setting up Dotbot. Please do not ^C." >&2;'
 		;;
-	mkprefix)
-		add="mkdir -p $2; cd $2;"
+	mktarget)
+		add="mkdir -p ${2}; cd ${2};"
 		;;
 	gitinit)
 		add='git init;'
@@ -86,10 +98,10 @@ appendshell() {
 		add='cp dotbot/tools/git-submodule/install .;'
 		;;
 	ensureparentdirs)
-		add="mkdir -p $2; rmdir $2;"
+		add="mkdir -p ${2}; rmdir ${2};"
 		;;
 	mv)
-		add="mv $2 $3;"
+		add="mv ${2} ${3};"
 		;;
 	runinstaller)
 		add='./install;'
@@ -100,7 +112,7 @@ appendshell() {
 		else
 			global=' '
 		fi
-		add='git config'$global'user.name "'$2'";'
+		add='git config'$global'user.name "'${2}'";'
 		;;
 	gitsetemail)
 		if (($3)); then
@@ -108,7 +120,7 @@ appendshell() {
 		else
 			global=' '
 		fi
-		add='git config'$global'user.email "'$2'";'
+		add='git config'$global'user.email "'${2}'";'
 		;;
 	gitinitialcommit)
 		add='git add -A; git commit -m "Initial commit";'
@@ -119,6 +131,10 @@ appendshell() {
 	setupshell="${setupshell}
 ${add}"
 }
+
+# ******************************
+# * Setup -- Variables section *
+# ******************************
 
 # Declare variables and set defaults
 # TODO: make colors-enabled the default mode, once its working properly
@@ -132,9 +148,20 @@ preview=1
 setupshell=''
 testmode=0
 verboseconf=0
+MODETEXT='    ____      _ __     ____        __  _____ __
+   /  _/___  (_) /_   / __ \____  / /_/ __(_) /__  _____
+   / // __ \/ / __/  / / / / __ \/ __/ /_/ / / _ \/ ___/
+ _/ // / / / / /_   / /_/ / /_/ / /_/ __/ / /  __(__  )
+/___/_/ /_/_/\__/  /_____/\____/\__/_/ /_/_/\___/____/
+'
+
+# *******************************
+# * Setup -- Parameters section *
+# *******************************
+
 
 while [[ $# -ne 0 ]]; do
-	case "$1" in
+	case "${1}" in
 	test)
 		testmode=1
 		installerrun=0
@@ -177,7 +204,7 @@ while [[ $# -ne 0 ]]; do
 		printline darkcyan "No color."
 		;;
 	*)
-		printline red "Unrecognized parameter / configuration option"
+		printline red "${hspace}Ignoring unrecognized parameter / configuration option: ${1}"
 		;;
 	esac
 	shift
@@ -216,26 +243,35 @@ paths=('~/.profile'
 	'~/.config/dmenu'
 	'~/.config/tint2')
 
-printline blue "Welcome to the configuration generator for Dotbot"
-printline blue "Please be aware that if you have a complicated setup, you may need more customization than this script offers."
+# Set constants
+dotlink='- link:'
+# Use ANSI-C Quoting to render whitespace
+# https://www.gnu.org/software/bash/manual/html_node/ANSI_002dC-Quoting.html
+newline=$'\n'
+hspace=$'\x20\x20\x20\x20'
+
+# ************************************
+# * Start of Logic / Process section *
+# ************************************
 printline
+printline blue "Configuration generator for Dotbot"
 printline blue "At any time, press ^C to quit. No changes will be made until you confirm."
 printline
 
 appendshell start
 
 # shellcheck disable=SC2088
-prefix="~/.dotfiles"
+target="~/.dotfiles"
 
-if ! [[ -d "${prefix/\~/${HOME}}" ]]; then
-	printline darkcyan "${prefix} is not in use."
+if [[ ! -d "${target/\~/${HOME}}" ]]; then
+	printline darkcyan "${target} is not in use."
 else
-	printline darkcyan "${prefix} exists and may have another purpose than ours."
+	printline darkcyan "${target} exists and may have another purpose than ours."
 fi
 
 while true; do
-	read -r -p "Where do you want your dotfiles repository to be? ($prefix) " answer
-	if [[ -z "$answer" ]]; then
+	read -r -p "Confirm path to your dotfiles repository: (${target})" answer
+	if [[ -z "${answer}" ]]; then
 		break
 	else
 		printline red "FEATURE NOT YET SUPPORTED."
@@ -244,35 +280,35 @@ while true; do
 	fi
 done
 
-appendshell mkprefix "${prefix}"
+appendshell mktarget "${target}"
 appendshell gitinit
 
 while true; do
-	read -r -p "Shall we add Dotbot as a submodule (a good idea)? (Y/n) " answer
-	if [[ -z "$answer" ]]; then
+	read -r -p "(Recommended) Add the Dotbot repo as a submodule? (Y/n)" answer
+	if [[ -z "${answer}" ]]; then
 		answer='y'
 	fi
-	case "$answer" in
+	case "${answer}" in
 	Y* | y*)
-		printline green "Will do."
+		printline green "${hspace}OK: will do."
 		appendshell gitaddsub
 		appendshell gitignoredirty
 		appendshell gitinstallinstall
 		break
 		;;
 	N* | n*)
-		printline darkgreen "OK: will not. You will need to manually set up your install script."
+		printline darkgreen "${hspace}OK: will not." # You will need to manually modify your Dotbot ./install script."
 		installerrun=0
 		break
 		;;
 	*)
-		printline red "Error: Unrecognized answer: ${answer}"
+		printline red "${hspace}Error: Unrecognized answer: ${answer}"
 		;;
 	esac
 done
 
 while true; do
-	read -r -p "Should Dotbot clean \$HOME of any broken links? (Recommended) (Y/n) " answer
+	read -r -p '(Recommended) Clean $HOME of any broken links? (Y/n)' answer
 	if [[ -z "$answer" ]]; then
 		answer='y'
 	fi
@@ -303,79 +339,73 @@ for item in ${paths[*]}; do
 	fi
 	if [[ -f "${fullname}" ]] || [[ -d "${fullname}" ]]; then
 		while true; do
-			read -r -p "I found ${item}, do you want to Dotbot it? (Y/n) " answer
-			if [[ -z "$answer" ]]; then
+			read -r -p "${item}: [Enter] to confirm management should be migrated to Dotbot, or type 'n' first to bypass it. (Y/n)" answer
+			if [[ -z "${answer}" ]]; then
 				answer='y'
 			fi
-			case "$answer" in
+			case "${answer}" in
 			Y* | y*)
-				linksection[$i]=$item
-				i=$i+1
-				printline green "Dotbotted!"
+				linksection[${i}]=${item}
+				i=${i}+1
+				printline green "${hspace}OK: Dotbotted!"
 				break
 				;;
 			N* | n*)
-				printline darkgreen "Not Dotbotted."
+				printline darkgreen "${hspace}OK: Not Dotbotted."
 				break
 				;;
 			*)
-				printline red "Error: Unrecognized answer: ${answer}"
+				printline red "${hspace}Error: Unrecognized answer: ${answer}"
 				;;
 			esac
 		done
 	fi
 done
 
-dotlink='- link:'
-# Use ANSI-C Quoting to render whitespace
-# https://www.gnu.org/software/bash/manual/html_node/ANSI_002dC-Quoting.html
-newline=$'\n'
-hspace=$'\x20\x20\x20\x20'
-
 # shellcheck disable=SC2048
 for item in ${linksection[*]}; do
 	fullname="${item/\~/$HOME}"
-	firstdot=$(echo "$item" | sed -n "s/[.].*//p" | wc -c)
-	firstslash=$(echo "$item" | sed -n "s/[/].*//p" | wc -c)
+	firstdot=$(echo "${item}" | sed -n "s/[.].*//p" | wc -c)
+	firstslash=$(echo "${item}" | sed -n "s/[/].*//p" | wc -c)
 	if [[ -d "${fullname}" ]]; then
-		itempath=$item'/'
+		itempath="${item}/"
 	else
-		itempath=$item
+		itempath="${item}"
 	fi
-	if [[ $firstdot -gt $firstslash ]]; then
-		itempath=${itempath:$firstdot}
+	if [[ ${firstdot} -gt ${firstslash} ]]; then
+		itempath="${itempath:${firstdot}}"
 	else
-		itempath=${itempath:$firstslash}
+		itempath="${itempath:${firstslash}}"
 	fi
-	nextslash=$(echo "$itempath" | sed -n "s/[/].*//p" | wc -c)
-	if [[ $nextslash -gt 0 ]]; then
+	nextslash=$(echo "${itempath}" | sed -n "s/[/].*//p" | wc -c)
+	if [[ ${nextslash} -gt 0 ]]; then
 		entryisdir='true'
 	else
 		entryisdir='false'
 	fi
-	if [[ $verboseconf -eq 1 ]]; then
+	if [[ ${verboseconf} -eq 1 ]]; then
 		new_entry="${newline}${hspace}${item/$HOME/\$HOME}:"
-		new_entry="$new_entry${newline}${hspace}${hspace}path: $itempath"
-		new_entry="$new_entry${newline}${hspace}${hspace}create: $entryisdir"
-		new_entry="$new_entry${newline}${hspace}${hspace}relink: false"
-		new_entry="$new_entry${newline}${hspace}${hspace}force: false"
+		new_entry="${new_entry}${newline}${hspace}${hspace}path: ${itempath}"
+		new_entry="${new_entry}${newline}${hspace}${hspace}create: ${entryisdir}"
+		new_entry="${new_entry}${newline}${hspace}${hspace}relink: false"
+		new_entry="${new_entry}${newline}${hspace}${hspace}force: false"
 	elif [[ $entryisdir = 'false' ]]; then
-		new_entry="${newline}${hspace}${item/$HOME/\$HOME}: $itempath"
+		new_entry="${newline}${hspace}${item/$HOME/\$HOME}: ${itempath}"
 	else
 		new_entry="${newline}${hspace}${item/$HOME/\$HOME}:"
-		new_entry="$new_entry${newline}${hspace}${hspace}path: $itempath"
-		new_entry="$new_entry${newline}${hspace}${hspace}create: $entryisdir"
+		new_entry="${new_entry}${newline}${hspace}${hspace}path: ${itempath}"
+		new_entry="${new_entry}${newline}${hspace}${hspace}create: ${entryisdir}"
 	fi
 
 	# TODO Accelerate; we should only have to do this 1 time per basedir, such as $HOME
-	appendshell ensureparentdirs "$itempath"
-	appendshell mv "$item" "$itempath"
-	dotlink="$dotlink$new_entry"
+	appendshell ensureparentdirs "${itempath}"
+	appendshell mv "${item}" "${itempath}"
+	dotlink="${dotlink}${new_entry}"
 done
 
-installconfyaml="$dotclean
-$dotlink
-$dotshell"
+installconfyaml="${dotclean}
+${dotlink}
+${dotshell}"
 export installconfyaml
 
 # Write the dotbot config file -- this should stand out in the terminal UI \
@@ -384,44 +414,44 @@ export installconfyaml
 printline
 printline yellow '! Congratulations! That is the end of the Dotbot survey'
 # TODO: The name of this output file should be configurable
-printline green 'Writing dotbot config to install.conf.yaml' 
+printline green 'Writing dotbot config to install.conf.yaml'
 printline
 printf '%s' "${installconfyaml}" > 'install.conf.yaml'
 
 getgitinfo=0
 gitinfoglobal=0
-if [[ $installerrun -eq 1 ]]; then
+if [[ ${installerrun} -eq 1 ]]; then
 
 	if [[ -z $(git config user.name) || -z $(git config user.email) ]]; then
-		printline darkred "Please note you do not have a name or email set for git."
-		printline darkred "You will not be able to commit any updates until you configure git."
-		while true;  do
-			read -r -p "Do you want to set them? (Y/n) " answer
-			if [[ -z "$answer" ]]; then
+		printline darkred "${hspace}~/.gitconfig is missing name and/or email."
+		# printline darkred "${hspace}You will not be able to commit any updates until you configure git."
+		while true; do
+			read -r -p "Do you want to set them now? (Y/n)" answer
+			if [[ -z "${answer}" ]]; then
 				answer='y'
 			fi
-			case "$answer" in
+			case "${answer}" in
 			Y* | y*)
 				getgitinfo=1
 				break
 				;;
 			N* | n*)
-				printline darkgreen "OK: will not."
+				printline darkgreen "${hspace}OK: will not."
 				getgitinfo=0
 				installerrun=0
 				break
 				;;
 			*)
-				printline red "Error: Unrecognized answer: ${answer}"
+				printline red "${hspace}Error: Unrecognized answer: ${answer}"
 				;;
 			esac
 		done
 		while true; do
-			read -r -p "Do you want these settings to be global? (Y/n) " answer
-			if [[ -z "$answer" ]]; then
+			read -r -p "Do you want these settings to be global? (Y/n)" answer
+			if [[ -z "${answer}" ]]; then
 				answer='y'
 			fi
-			case "$answer" in
+			case "${answer}" in
 			Y* | y*)
 				printline green "Adding --global to the set commands."
 				gitinfoglobal=1
@@ -433,13 +463,13 @@ if [[ $installerrun -eq 1 ]]; then
 				break
 				;;
 			*)
-				printline red "Error: Unrecognized answer: ${answer}"
+				printline red "${hspace}Error: Unrecognized answer: ${answer}"
 				;;
 			esac
 		done
 	fi
 fi
-if [[ $getgitinfo -eq 1 ]]; then
+if [[ ${getgitinfo} -eq 1 ]]; then
 	if [[ -z $(git config user.name) ]]; then
 		gitname="Donald Knuth"
 	else
@@ -451,73 +481,73 @@ if [[ $getgitinfo -eq 1 ]]; then
 		gitemail="$(git config user.email)"
 	fi
 	read -r -p "What do you want for your git name? [${gitname}]" answer
-	if [[ -z "$answer" ]]; then
-		answer="$gitname"
+	if [[ -z "${answer}" ]]; then
+		answer="${gitname}"
 	fi
-	gitname="$answer"
+	gitname="${answer}"
 	read -r -p "What do you want for your git email? [${gitemail}]" answer
-	if [[ -z "$answer" ]]; then
-		answer="$gitemail"
+	if [[ -z "${answer}" ]]; then
+		answer="${gitemail}"
 	fi
-	gitemail="$answer"
+	gitemail="${answer}"
 	appendshell gitsetname "${gitname}" "${gitinfoglobal}"
 	appendshell gitsetemail "${gitemail}" "${gitinfoglobal}"
 fi
 
 while [[ $installerrun -eq 1 ]]; do
-	read -r -p "Run the installer? (Necessary to git commit) (Y/n) " answer
-	if [[ -z "$answer" ]]; then
+	read -r -p "Run the installer? (Necessary to git commit) (Y/n)" answer
+	if [[ -z "${answer}" ]]; then
 		answer='y'
 	fi
-	case "$answer" in
+	case "${answer}" in
 	Y* | y*)
-		printline green "Will do."
+		printline green "${hspace}OK: Will do."
 		appendshell runinstaller
 		break
 		;;
 	N* | n*)
-		printline darkgreen "OK: will not. You will need to take care of that yourself."
+		printline darkgreen "${hspace}OK: will not. You will need to take care of that yourself."
 		installerrun=0
 		break
 		;;
 	*)
-		printline red "Error: Unrecognized answer: ${answer}"
+		printline red "${hspace}Error: Unrecognized answer: ${answer}. Please try again."
 		;;
 	esac
 done
 
 while [[ $installerrun -eq 1 ]]; do
-	read -r -p "Make the initial commit? (Y/n) " answer
-	if [[ -z "$answer" ]]; then
+	read -r -p "Make the initial commit? (Y/n)" answer
+	if [[ -z "${answer}" ]]; then
 		answer='y'
 	fi
-	case "$answer" in
+	case "${answer}" in
 	Y* | y*)
-		printline green "Will do."
+		printline green "${hspace}OK: Will do."
 		appendshell gitinitialcommit
 		break
 		;;
 	N* | n*)
-		printline darkgreen "OK: will not. You will need to take care of that yourself."
+		printline darkgreen "${hspace}OK: will not. You will need to take care of that yourself."
 		break
 		;;
 	*)
-		printline red "Error: Unrecognized answer: ${answer}"
+		printline red "${hspace}Error: Unrecognized answer: ${answer}. Please try again."
 		;;
 	esac
 done
 
 printline
-if [[ $dumpconf -eq 1 ]]; then
-	echo -e "$dotlink"
+if [[ ${dumpconf} -eq 1 ]]; then
+	echo -e "${dotlink}"
 	printline
 fi
-echoerr magenta "The below are the actions that will be taken to setup Dotbot."
-if [[ $testmode -eq 1 ]]; then
+printline magenta "The below are the actions that will be taken to setup Dotbot."
+if [[ "${testmode}" -eq 1 ]]; then
 	printline darkmagenta "Just kidding. They won't be."
 fi
 
-if [[ $preview -eq 1 ]]; then
+if [[ "${preview}" -eq 1 ]]; then
 	# TODO: Write setupshell to a file and print/cat the file
 	# Call "setupshell" comething like ./migrate-dotfiles.sh
 	printout "${setupshell}"
