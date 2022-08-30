@@ -283,7 +283,8 @@ done
 appendshell mktarget "${target}"
 appendshell gitinit
 
-while true; do
+# Prompt to add, only if dotbot is not detected as a submodule of
+while [[ ! -d ./dotbot ]]; do
 	read -r -p '(Recommended) Add the Dotbot repo as a submodule? (Y/n)' answer
 	if [[ -z "${answer}" ]]; then
 		answer='y'
@@ -455,12 +456,10 @@ if [[ ${installerrun} -eq 1 ]]; then
 			fi
 			case "${answer}" in
 			Y* | y*)
-				printline green "Adding --global to the set commands."
 				gitinfoglobal=1
 				break
 				;;
 			N* | n*)
-				printline green "OK: will make them local."
 				gitinfoglobal=0
 				break
 				;;
